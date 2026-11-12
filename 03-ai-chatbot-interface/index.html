@@ -1,0 +1,1563 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0b1020" />
+  <meta name="description" content="Aether — a neon dark-mode AI chatbot interface built as a single HTML file." />
+  <title>Aether — AI Agent Assistant</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" />
+
+  <style>
+    :root {
+      --bg: #0b1020;
+      --bg-2: #0f172a;
+      --panel: rgba(15, 22, 38, .82);
+      --panel-2: rgba(20, 29, 48, .9);
+      --bubble: rgba(22, 31, 48, .92);
+      --line: rgba(148, 163, 184, .13);
+      --line-strong: rgba(148, 163, 184, .22);
+      --text: #e8eefb;
+      --muted: #8b9ab4;
+      --soft: #64748b;
+      --violet: #8b5cf6;
+      --violet-2: #a78bfa;
+      --cyan: #22d3ee;
+      --blue: #3b82f6;
+      --green: #22c55e;
+      --radius: 18px;
+      --sidebar-w: 278px;
+      --glow-violet: 0 0 30px -8px rgba(139, 92, 246, .75);
+      --glow-cyan: 0 0 26px -6px rgba(34, 211, 238, .6);
+      --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+    }
+
+    * { box-sizing: border-box; }
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Arial, sans-serif;
+      font-size: 14px;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+      overflow: hidden;
+    }
+
+    /* Ambient neon background */
+    body::before {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      background:
+        radial-gradient(760px 520px at 12% -6%, rgba(124, 58, 237, .22), transparent 62%),
+        radial-gradient(680px 460px at 92% 4%, rgba(6, 182, 212, .14), transparent 60%),
+        radial-gradient(900px 620px at 78% 108%, rgba(37, 99, 235, .12), transparent 65%),
+        linear-gradient(180deg, #0b1020, #0a0f1d 55%, #080c17);
+    }
+
+    /* Subtle grid texture */
+    body::after {
+      content: "";
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      pointer-events: none;
+      opacity: .32;
+      background-image:
+        linear-gradient(rgba(148, 163, 184, .055) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(148, 163, 184, .055) 1px, transparent 1px);
+      background-size: 56px 56px;
+      mask-image: radial-gradient(ellipse 110% 80% at 50% 0%, #000 20%, transparent 78%);
+      -webkit-mask-image: radial-gradient(ellipse 110% 80% at 50% 0%, #000 20%, transparent 78%);
+    }
+
+    a { color: inherit; text-decoration: none; }
+    button { font-family: inherit; }
+    ::selection { background: rgba(139, 92, 246, .35); color: #fff; }
+
+    :focus-visible {
+      outline: 2px solid var(--violet-2);
+      outline-offset: 2px;
+      border-radius: 8px;
+    }
+
+    /* ================================ SCROLLBARS ================================ */
+    * {
+      scrollbar-width: thin;
+      scrollbar-color: rgba(100, 116, 139, .55) transparent;
+    }
+    ::-webkit-scrollbar { width: 10px; height: 10px; }
+    ::-webkit-scrollbar-track { background: transparent; }
+    ::-webkit-scrollbar-thumb {
+      border: 3px solid transparent;
+      border-radius: 99px;
+      background: linear-gradient(180deg, #334155, #1e293b) padding-box;
+      background-clip: padding-box;
+      transition: background .2s;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: linear-gradient(180deg, #475569, #334155) padding-box;
+      background-clip: padding-box;
+    }
+    ::-webkit-scrollbar-corner { background: transparent; }
+
+    /* ================================== SHELL ================================== */
+    .app {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      height: 100vh;
+      height: 100dvh;
+      overflow: hidden;
+    }
+
+    /* ================================= SIDEBAR ================================= */
+    .sidebar {
+      position: relative;
+      z-index: 40;
+      display: flex;
+      flex-direction: column;
+      width: var(--sidebar-w);
+      flex: 0 0 var(--sidebar-w);
+      height: 100%;
+      background: linear-gradient(180deg, rgba(13, 20, 35, .96), rgba(10, 15, 27, .98));
+      border-right: 1px solid var(--line);
+      backdrop-filter: blur(18px);
+      -webkit-backdrop-filter: blur(18px);
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 11px;
+      padding: 20px 18px 16px;
+    }
+
+    .brand-mark {
+      position: relative;
+      display: grid;
+      place-items: center;
+      width: 36px;
+      height: 36px;
+      flex: none;
+      border-radius: 12px;
+      background: linear-gradient(135deg, #7c3aed, #4f46e5 55%, #06b6d4);
+      color: #fff;
+      font-size: 15px;
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, .12) inset, 0 8px 24px -8px rgba(124, 58, 237, .95);
+    }
+    .brand-mark::after {
+      content: "";
+      position: absolute;
+      inset: -3px;
+      border-radius: 15px;
+      border: 1px solid rgba(139, 92, 246, .35);
+      animation: breathe 3.4s ease-in-out infinite;
+    }
+
+    .brand-text { display: flex; flex-direction: column; line-height: 1.2; min-width: 0; }
+    .brand-text strong { font-size: 14.5px; font-weight: 700; letter-spacing: -.01em; color: #f4f7ff; }
+    .brand-text span { margin-top: 2px; font-size: 10px; font-weight: 500; letter-spacing: .14em; text-transform: uppercase; color: #6d7f9e; }
+
+    .brand-tag {
+      margin-left: auto;
+      padding: 3px 7px;
+      border: 1px solid rgba(139, 92, 246, .32);
+      border-radius: 6px;
+      background: rgba(139, 92, 246, .13);
+      color: #c4b5fd;
+      font-size: 9.5px;
+      font-weight: 700;
+      letter-spacing: .09em;
+    }
+
+    /* New chat */
+    .new-chat {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 4px 14px 12px;
+      padding: 11px 13px;
+      border: 1px solid rgba(167, 139, 250, .32);
+      border-radius: 13px;
+      background: linear-gradient(135deg, rgba(124, 58, 237, .92), rgba(79, 70, 229, .86) 55%, rgba(8, 145, 178, .82));
+      color: #fff;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      box-shadow: 0 10px 30px -14px rgba(124, 58, 237, .95), inset 0 1px 0 rgba(255, 255, 255, .18);
+      transition: transform .2s, box-shadow .2s, filter .2s;
+    }
+    .new-chat i { font-size: 12px; }
+    .new-chat kbd {
+      margin-left: auto;
+      padding: 2px 6px;
+      border: 1px solid rgba(255, 255, 255, .28);
+      border-radius: 5px;
+      background: rgba(2, 6, 23, .22);
+      color: rgba(255, 255, 255, .85);
+      font-family: inherit;
+      font-size: 10px;
+      font-weight: 600;
+    }
+    .new-chat:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.06);
+      box-shadow: 0 16px 38px -14px rgba(124, 58, 237, 1), inset 0 1px 0 rgba(255, 255, 255, .22);
+    }
+    .new-chat:active { transform: translateY(0) scale(.995); }
+
+    /* Search */
+    .search-box {
+      display: flex;
+      align-items: center;
+      gap: 9px;
+      margin: 0 14px 10px;
+      padding: 0 11px;
+      height: 36px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: rgba(148, 163, 184, .05);
+      color: #64748b;
+      transition: border-color .2s, background .2s, box-shadow .2s;
+    }
+    .search-box:focus-within {
+      border-color: rgba(139, 92, 246, .45);
+      background: rgba(139, 92, 246, .06);
+      box-shadow: 0 0 0 3px rgba(139, 92, 246, .1);
+    }
+    .search-box i { font-size: 11.5px; }
+    .search-box input {
+      flex: 1;
+      min-width: 0;
+      height: 100%;
+      padding: 0;
+      border: 0;
+      outline: 0;
+      background: transparent;
+      color: var(--text);
+      font-family: inherit;
+      font-size: 12.5px;
+    }
+    .search-box input::placeholder { color: #64748b; }
+
+    /* History */
+    .side-scroll {
+      flex: 1;
+      overflow-y: auto;
+      padding: 2px 0 12px;
+      overscroll-behavior: contain;
+    }
+
+    .side-label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin: 16px 18px 7px;
+      color: #5b6b88;
+      font-size: 10px;
+      font-weight: 600;
+      letter-spacing: .13em;
+      text-transform: uppercase;
+    }
+    .side-label span { margin-left: auto; color: #4a5872; font-size: 10px; letter-spacing: .04em; }
+
+    .chat-list { display: flex; flex-direction: column; gap: 1px; padding: 0 10px; }
+
+    .chat-item {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 10px;
+      border: 1px solid transparent;
+      border-radius: 10px;
+      color: #a8b5cc;
+      font-size: 12.5px;
+      cursor: pointer;
+      transition: background .2s, color .2s, border-color .2s, transform .2s;
+    }
+    .chat-item i { width: 15px; flex: none; text-align: center; font-size: 11.5px; color: #64748b; transition: color .2s; }
+    .chat-item span {
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+    .chat-item:hover { background: rgba(148, 163, 184, .07); color: #e2e8f0; transform: translateX(2px); }
+    .chat-item:hover i { color: #a78bfa; }
+
+    .chat-item.active {
+      color: #f1f5ff;
+      border-color: rgba(139, 92, 246, .28);
+      background: linear-gradient(90deg, rgba(139, 92, 246, .22), rgba(139, 92, 246, .05));
+      box-shadow: inset 0 0 0 1px rgba(139, 92, 246, .07), 0 8px 22px -18px rgba(139, 92, 246, .9);
+    }
+    .chat-item.active::before {
+      content: "";
+      position: absolute;
+      left: -10px;
+      top: 8px;
+      bottom: 8px;
+      width: 3px;
+      border-radius: 0 3px 3px 0;
+      background: linear-gradient(180deg, #c4b5fd, #8b5cf6);
+      box-shadow: 0 0 14px rgba(139, 92, 246, .9);
+    }
+    .chat-item.active i { color: #c4b5fd; }
+
+    /* Sidebar footer */
+    .side-foot { margin-top: auto; padding: 10px 14px 14px; border-top: 1px solid var(--line); }
+
+    .usage {
+      padding: 12px 13px;
+      border: 1px solid rgba(139, 92, 246, .2);
+      border-radius: 12px;
+      background: linear-gradient(150deg, rgba(124, 58, 237, .16), rgba(6, 182, 212, .05));
+      margin-bottom: 10px;
+    }
+    .usage-top { display: flex; align-items: center; justify-content: space-between; font-size: 11px; color: #a5b4cf; }
+    .usage-top strong { color: #ddd6fe; font-weight: 600; }
+    .usage-bar {
+      position: relative;
+      height: 4px;
+      margin: 9px 0 7px;
+      border-radius: 99px;
+      background: rgba(148, 163, 184, .14);
+      overflow: hidden;
+    }
+    .usage-bar::after {
+      content: "";
+      position: absolute;
+      inset: 0 32% 0 0;
+      border-radius: 99px;
+      background: linear-gradient(90deg, #8b5cf6, #22d3ee);
+      box-shadow: 0 0 12px rgba(139, 92, 246, .85);
+    }
+    .usage small { display: block; color: #5f708e; font-size: 10.5px; }
+
+    .account {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 10px;
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      background: rgba(148, 163, 184, .045);
+      cursor: pointer;
+      transition: background .2s, border-color .2s;
+    }
+    .account:hover { background: rgba(148, 163, 184, .08); border-color: var(--line-strong); }
+    .account > div { min-width: 0; line-height: 1.3; }
+    .account strong { display: block; font-size: 12px; font-weight: 600; color: #e6edf9; }
+    .account small { display: block; color: #64748b; font-size: 10.5px; }
+    .account > i { margin-left: auto; color: #5b6b88; font-size: 12px; }
+
+    .avatar {
+      display: grid;
+      place-items: center;
+      width: 32px;
+      height: 32px;
+      flex: none;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #8b5cf6, #06b6d4);
+      color: #fff;
+      font-size: 11.5px;
+      font-weight: 700;
+      letter-spacing: .01em;
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, .16) inset, 0 0 16px -6px rgba(139, 92, 246, .9);
+    }
+
+    /* ================================== MAIN ================================== */
+    .main { flex: 1; display: flex; flex-direction: column; min-width: 0; height: 100%; }
+
+    .topbar {
+      position: relative;
+      z-index: 20;
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      height: 70px;
+      flex: none;
+      padding: 0 24px;
+      background: rgba(10, 15, 27, .58);
+      border-bottom: 1px solid var(--line);
+      backdrop-filter: blur(18px) saturate(150%);
+      -webkit-backdrop-filter: blur(18px) saturate(150%);
+    }
+
+    .menu-btn { display: none; }
+
+    .icon-btn {
+      position: relative;
+      display: grid;
+      place-items: center;
+      width: 36px;
+      height: 36px;
+      flex: none;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: rgba(148, 163, 184, .05);
+      color: #93a3bd;
+      font-size: 13px;
+      cursor: pointer;
+      transition: background .2s, color .2s, border-color .2s, transform .2s;
+    }
+    .icon-btn:hover {
+      background: rgba(139, 92, 246, .14);
+      border-color: rgba(139, 92, 246, .38);
+      color: #ddd6fe;
+      transform: translateY(-1px);
+    }
+
+    .agent { display: flex; align-items: center; gap: 12px; min-width: 0; }
+
+    .agent-orb {
+      position: relative;
+      display: grid;
+      place-items: center;
+      width: 38px;
+      height: 38px;
+      flex: none;
+      border-radius: 12px;
+      background: linear-gradient(135deg, rgba(124, 58, 237, .9), rgba(6, 182, 212, .85));
+      color: #fff;
+      font-size: 14px;
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, .12) inset, var(--glow-violet);
+    }
+    .agent-orb::after {
+      content: "";
+      position: absolute;
+      inset: -4px;
+      border-radius: 15px;
+      border: 1px solid rgba(34, 211, 238, .3);
+      animation: breathe 3s ease-in-out infinite;
+    }
+
+    .agent-meta { min-width: 0; line-height: 1.25; }
+    .agent-name { display: flex; align-items: center; gap: 8px; font-size: 14.5px; font-weight: 650; letter-spacing: -.01em; color: #f1f5ff; }
+    .online {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 2px 7px 2px 6px;
+      border: 1px solid rgba(34, 197, 94, .25);
+      border-radius: 999px;
+      background: rgba(34, 197, 94, .1);
+      color: #86efac;
+      font-size: 9.5px;
+      font-weight: 600;
+      letter-spacing: .02em;
+    }
+    .online .dot {
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 0 2px rgba(34, 197, 94, .2);
+      animation: pulse 2.2s ease-in-out infinite;
+    }
+    .agent-sub { margin-top: 3px; color: #64748b; font-size: 11.5px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .topbar-actions { display: flex; align-items: center; gap: 8px; margin-left: auto; }
+
+    .model-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      height: 34px;
+      padding: 0 10px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      background: rgba(148, 163, 184, .05);
+      color: #cbd5e1;
+      font-size: 11.5px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background .2s, border-color .2s;
+      white-space: nowrap;
+    }
+    .model-pill:hover { background: rgba(139, 92, 246, .12); border-color: rgba(139, 92, 246, .34); }
+    .model-pill i:first-child { color: #a78bfa; font-size: 11px; }
+    .model-pill i:last-child { color: #64748b; font-size: 9px; }
+
+    /* ================================ CHAT AREA ================================ */
+    .chat-scroll {
+      position: relative;
+      flex: 1;
+      overflow-y: auto;
+      overscroll-behavior: contain;
+      scroll-behavior: smooth;
+      padding: 26px 24px 10px;
+    }
+
+    .chat-inner {
+      display: flex;
+      flex-direction: column;
+      gap: 22px;
+      width: 100%;
+      max-width: 880px;
+      margin: 0 auto;
+      padding-bottom: 6px;
+    }
+
+    .day-divider {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      color: #4f5f7a;
+      font-size: 10.5px;
+      font-weight: 600;
+      letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+    .day-divider::before,
+    .day-divider::after {
+      content: "";
+      height: 1px;
+      flex: 1;
+      background: linear-gradient(90deg, transparent, rgba(148, 163, 184, .16), transparent);
+    }
+
+    .msg { display: flex; animation: rise .45s cubic-bezier(.22, .68, .35, 1) both; }
+
+    /* User */
+    .msg.user { justify-content: flex-end; }
+
+    .bubble {
+      max-width: 78%;
+      padding: 12px 16px;
+      border-radius: 16px 16px 5px 16px;
+      background: linear-gradient(135deg, #2563eb, #4f46e5 60%, #4338ca);
+      border: 1px solid rgba(165, 180, 252, .22);
+      color: #f4f7ff;
+      font-size: 13.5px;
+      line-height: 1.65;
+      box-shadow: 0 16px 40px -24px rgba(59, 130, 246, .95), inset 0 1px 0 rgba(255, 255, 255, .14);
+      overflow-wrap: anywhere;
+    }
+
+    /* AI */
+    .msg.ai { gap: 12px; align-items: flex-start; }
+
+    .ai-avatar {
+      position: relative;
+      display: grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      flex: none;
+      margin-top: 2px;
+      border-radius: 11px;
+      background: linear-gradient(135deg, #7c3aed, #06b6d4);
+      color: #fff;
+      font-size: 12.5px;
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, .12) inset, 0 0 22px -6px rgba(124, 58, 237, .95);
+    }
+    .ai-avatar::after {
+      content: "";
+      position: absolute;
+      inset: -4px;
+      border-radius: 15px;
+      border: 1px solid rgba(139, 92, 246, .28);
+      animation: breathe 3.6s ease-in-out infinite;
+    }
+
+    .ai-body { flex: 1; min-width: 0; max-width: 88%; }
+
+    .ai-name {
+      display: flex;
+      align-items: center;
+      gap: 7px;
+      margin-bottom: 6px;
+      color: #c4b5fd;
+      font-size: 11.5px;
+      font-weight: 600;
+      letter-spacing: .01em;
+    }
+    .ai-name .tag {
+      padding: 1px 6px;
+      border: 1px solid rgba(139, 92, 246, .26);
+      border-radius: 5px;
+      background: rgba(139, 92, 246, .12);
+      color: #a78bfa;
+      font-size: 9px;
+      font-weight: 700;
+      letter-spacing: .08em;
+    }
+    .ai-name .stamp { margin-left: auto; color: #475569; font-size: 10.5px; font-weight: 400; }
+
+    .ai-bubble {
+      padding: 14px 17px;
+      border: 1px solid var(--line);
+      border-radius: 5px 16px 16px 16px;
+      background: var(--bubble);
+      color: #c3cee2;
+      font-size: 13.5px;
+      line-height: 1.72;
+      box-shadow: 0 20px 44px -38px rgba(2, 6, 23, .95), inset 0 1px 0 rgba(255, 255, 255, .03);
+      overflow-wrap: anywhere;
+    }
+    .ai-bubble > :first-child { margin-top: 0; }
+    .ai-bubble > :last-child { margin-bottom: 0; }
+    .ai-bubble p { margin: 0 0 11px; }
+    .ai-bubble strong { color: #e8eeff; font-weight: 600; }
+
+    .ai-bubble ul { margin: 0 0 11px; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 7px; }
+    .ai-bubble ul li { position: relative; padding-left: 20px; }
+    .ai-bubble ul li::before {
+      content: "";
+      position: absolute;
+      left: 4px;
+      top: 9px;
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #a78bfa, #22d3ee);
+      box-shadow: 0 0 8px rgba(139, 92, 246, .8);
+    }
+
+    code.inline {
+      padding: 1px 5px;
+      border: 1px solid rgba(148, 163, 184, .16);
+      border-radius: 5px;
+      background: rgba(148, 163, 184, .1);
+      color: #a5f3fc;
+      font-family: var(--font-mono);
+      font-size: 11.8px;
+    }
+
+    /* Code block */
+    .code-block {
+      margin: 13px 0 6px;
+      border: 1px solid rgba(148, 163, 184, .17);
+      border-radius: 13px;
+      background: #080d18;
+      box-shadow: 0 0 0 1px rgba(2, 6, 23, .5), 0 26px 50px -40px #000, inset 0 1px 0 rgba(255, 255, 255, .04);
+      overflow: hidden;
+    }
+
+    .code-head {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 9px 12px;
+      border-bottom: 1px solid rgba(148, 163, 184, .12);
+      background: linear-gradient(180deg, rgba(148, 163, 184, .075), rgba(148, 163, 184, .03));
+    }
+
+    .dots { display: flex; gap: 6px; flex: none; }
+    .dots i { width: 9px; height: 9px; border-radius: 50%; display: block; }
+    .dots i:nth-child(1) { background: #f87171; box-shadow: 0 0 8px rgba(248, 113, 113, .55); }
+    .dots i:nth-child(2) { background: #fbbf24; box-shadow: 0 0 8px rgba(251, 191, 36, .45); }
+    .dots i:nth-child(3) { background: #34d399; box-shadow: 0 0 8px rgba(52, 211, 153, .45); }
+
+    .code-file {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      color: #7c8ba6;
+      font-family: var(--font-mono);
+      font-size: 11px;
+      letter-spacing: .01em;
+    }
+    .code-file i { color: #67e8f9; font-size: 10.5px; }
+
+    .copy-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      margin-left: auto;
+      padding: 4px 8px;
+      border: 1px solid rgba(148, 163, 184, .16);
+      border-radius: 7px;
+      background: rgba(148, 163, 184, .07);
+      color: #94a3b8;
+      font-size: 10.5px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background .18s, color .18s, border-color .18s;
+    }
+    .copy-btn:hover { background: rgba(139, 92, 246, .18); border-color: rgba(139, 92, 246, .4); color: #e9d5ff; }
+    .copy-btn i { font-size: 10px; }
+    .copy-btn.copied { color: #86efac; border-color: rgba(34, 197, 94, .4); background: rgba(34, 197, 94, .12); }
+
+    pre.code {
+      margin: 0;
+      padding: 13px 16px 15px;
+      overflow-x: auto;
+      font-family: var(--font-mono);
+      font-size: 12px;
+      line-height: 1.95;
+      color: #cbd5e1;
+      tab-size: 2;
+    }
+    pre.code code { display: block; min-width: max-content; }
+
+    .line {
+      display: block;
+      position: relative;
+      padding-left: 30px;
+      white-space: pre;
+      counter-increment: ln;
+    }
+    pre.code code { counter-reset: ln; }
+    .line::before {
+      content: counter(ln);
+      position: absolute;
+      left: 0;
+      width: 18px;
+      text-align: right;
+      color: #2f3d55;
+      font-size: 11px;
+      user-select: none;
+    }
+    .line:hover::before { color: #6b7c99; }
+
+    .c-cm { color: #5d6d8c; font-style: italic; }
+    .c-k  { color: #c084fc; }
+    .c-s  { color: #7ee7a8; }
+    .c-f  { color: #67e8f9; }
+    .c-v  { color: #e2e8f0; }
+    .c-n  { color: #fbbf24; }
+    .c-w  { color: #fda4af; text-decoration: underline wavy rgba(253, 164, 175, .35); text-underline-offset: 3px; }
+
+    /* Message actions */
+    .ai-actions { display: flex; align-items: center; gap: 3px; margin-top: 7px; }
+
+    .mini-btn {
+      display: grid;
+      place-items: center;
+      width: 26px;
+      height: 26px;
+      border: 1px solid transparent;
+      border-radius: 7px;
+      background: transparent;
+      color: #5b6b88;
+      font-size: 10.5px;
+      cursor: pointer;
+      transition: background .18s, color .18s, border-color .18s;
+    }
+    .mini-btn:hover { background: rgba(148, 163, 184, .1); border-color: var(--line); color: #cbd5e1; }
+    .mini-btn.liked { color: #86efac; background: rgba(34, 197, 94, .12); border-color: rgba(34, 197, 94, .3); }
+    .mini-btn.disliked { color: #fca5a5; background: rgba(239, 68, 68, .12); border-color: rgba(239, 68, 68, .3); }
+
+    /* Typing */
+    .typing-bubble {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 15px 18px;
+      border: 1px solid var(--line);
+      border-radius: 5px 16px 16px 16px;
+      background: var(--bubble);
+    }
+    .typing-bubble span {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #a78bfa, #22d3ee);
+      animation: blink 1.25s ease-in-out infinite;
+    }
+    .typing-bubble span:nth-child(2) { animation-delay: .16s; }
+    .typing-bubble span:nth-child(3) { animation-delay: .32s; }
+
+    /* ================================ COMPOSER ================================ */
+    .composer-wrap {
+      position: relative;
+      z-index: 20;
+      flex: none;
+      padding: 8px 24px 16px;
+      background: linear-gradient(180deg, rgba(10, 15, 27, 0), rgba(8, 12, 23, .82) 40%, rgba(8, 12, 23, .96));
+    }
+
+    .composer { width: 100%; max-width: 880px; margin: 0 auto; }
+
+    .suggestions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 7px;
+      margin-bottom: 10px;
+    }
+    .sugg {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 6px 11px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      background: rgba(148, 163, 184, .045);
+      color: #8fa0bb;
+      font-size: 11.5px;
+      cursor: pointer;
+      transition: background .2s, color .2s, border-color .2s, transform .2s;
+    }
+    .sugg i { font-size: 9.5px; color: #a78bfa; }
+    .sugg:hover {
+      color: #e2e8f0;
+      border-color: rgba(139, 92, 246, .38);
+      background: rgba(139, 92, 246, .12);
+      transform: translateY(-1px);
+    }
+
+    .composer-box {
+      padding: 11px 12px 9px 15px;
+      border: 1px solid rgba(148, 163, 184, .18);
+      border-radius: 20px;
+      background: rgba(15, 23, 39, .92);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      box-shadow: 0 24px 60px -40px #000, inset 0 1px 0 rgba(255, 255, 255, .045);
+      transition: border-color .22s, box-shadow .22s, background .22s;
+    }
+    .composer-box:focus-within {
+      border-color: rgba(139, 92, 246, .55);
+      background: rgba(17, 26, 44, .96);
+      box-shadow: 0 0 0 4px rgba(124, 58, 237, .11), 0 0 46px -20px rgba(124, 58, 237, .9), inset 0 1px 0 rgba(255, 255, 255, .05);
+    }
+
+    #composerInput {
+      display: block;
+      width: 100%;
+      max-height: 160px;
+      min-height: 26px;
+      padding: 3px 4px 8px;
+      border: 0;
+      outline: 0;
+      background: transparent;
+      color: #e8eefb;
+      font-family: inherit;
+      font-size: 13.5px;
+      line-height: 1.65;
+      resize: none;
+      overflow-y: auto;
+    }
+    #composerInput::placeholder { color: #56657f; }
+
+    .composer-bar { display: flex; align-items: center; gap: 6px; }
+
+    .tool {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      height: 30px;
+      padding: 0 9px;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      background: transparent;
+      color: #6f7f9a;
+      font-size: 11px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: background .18s, color .18s, border-color .18s;
+    }
+    .tool i { font-size: 11.5px; }
+    .tool:hover { background: rgba(148, 163, 184, .1); border-color: var(--line); color: #cbd5e1; }
+    .tool.model { border-color: var(--line); background: rgba(148, 163, 184, .05); }
+    .tool.model i:first-child { color: #a78bfa; }
+    .tool.model i:last-child { font-size: 8px; color: #56657f; }
+
+    .composer-div { width: 1px; height: 18px; margin: 0 2px; background: var(--line); }
+
+    .send-btn {
+      position: relative;
+      display: grid;
+      place-items: center;
+      width: 40px;
+      height: 40px;
+      flex: none;
+      margin-left: auto;
+      border: 0;
+      border-radius: 13px;
+      background: linear-gradient(135deg, #8b5cf6, #6d28d9 50%, #0891b2);
+      color: #fff;
+      font-size: 14px;
+      cursor: pointer;
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, .28),
+        0 10px 26px -10px rgba(139, 92, 246, 1),
+        0 0 32px -8px rgba(34, 211, 238, .55);
+      transition: transform .18s, box-shadow .18s, filter .18s;
+    }
+    .send-btn::after {
+      content: "";
+      position: absolute;
+      inset: -3px;
+      border-radius: 16px;
+      border: 1px solid rgba(167, 139, 250, .35);
+      animation: breathe 2.8s ease-in-out infinite;
+      pointer-events: none;
+    }
+    .send-btn:hover {
+      transform: translateY(-1px) scale(1.035);
+      filter: brightness(1.08);
+      box-shadow:
+        inset 0 1px 0 rgba(255, 255, 255, .3),
+        0 14px 32px -10px rgba(139, 92, 246, 1),
+        0 0 46px -6px rgba(34, 211, 238, .75);
+    }
+    .send-btn:active { transform: scale(.96); }
+
+    .powered {
+      margin: 10px 0 0;
+      color: #4f5f7a;
+      font-size: 11px;
+      text-align: center;
+      letter-spacing: .01em;
+    }
+    .powered b { color: #8b9ab4; font-weight: 600; }
+    .powered .sep { margin: 0 7px; color: #334155; }
+
+    /* ================================= SCRIM ================================= */
+    .scrim {
+      position: fixed;
+      inset: 0;
+      z-index: 35;
+      background: rgba(2, 6, 23, .62);
+      backdrop-filter: blur(3px);
+      opacity: 0;
+      visibility: hidden;
+      transition: opacity .25s, visibility .25s;
+    }
+    body.nav-open .scrim { opacity: 1; visibility: visible; }
+
+    /* ================================ KEYFRAMES ================================ */
+    @keyframes rise {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 2px rgba(34, 197, 94, .2); }
+      50% { box-shadow: 0 0 0 5px rgba(34, 197, 94, .05); }
+    }
+    @keyframes breathe {
+      0%, 100% { opacity: .45; transform: scale(1); }
+      50% { opacity: 1; transform: scale(1.02); }
+    }
+    @keyframes blink {
+      0%, 60%, 100% { opacity: .28; transform: translateY(0); }
+      30% { opacity: 1; transform: translateY(-3px); }
+    }
+
+    /* ================================ RESPONSIVE =============================== */
+    @media (max-width: 980px) {
+      .sidebar {
+        position: fixed;
+        top: 0;
+        left: 0;
+        transform: translateX(-102%);
+        transition: transform .3s cubic-bezier(.4, 0, .2, 1);
+        box-shadow: 0 30px 90px rgba(2, 6, 23, .8);
+      }
+      body.nav-open .sidebar { transform: none; }
+      .menu-btn { display: grid; }
+      .topbar { padding: 0 16px; height: 64px; }
+      .chat-scroll { padding: 20px 16px 8px; }
+      .composer-wrap { padding: 8px 16px 12px; }
+    }
+
+    @media (max-width: 720px) {
+      .model-pill span { display: none; }
+      .model-pill { padding: 0 9px; }
+      .agent-sub { max-width: 150px; }
+      .bubble { max-width: 86%; }
+      .ai-body { max-width: 100%; }
+      .code-block { border-radius: 11px; }
+      pre.code { font-size: 11.2px; padding: 11px 12px 13px; }
+      .suggestions { display: none; }
+      .tool span { display: none; }
+      .ai-name .stamp { display: none; }
+    }
+
+    @media (max-width: 520px) {
+      .agent-orb { width: 34px; height: 34px; }
+      .agent-name { font-size: 13.5px; }
+      .online { padding: 2px 6px; }
+      .chat-inner { gap: 18px; }
+      .bubble { max-width: 92%; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        animation-duration: .001ms !important;
+        animation-delay: 0ms !important;
+        transition-duration: .001ms !important;
+        scroll-behavior: auto !important;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app">
+    <!-- ============================== SIDEBAR ============================== -->
+    <aside class="sidebar">
+      <div class="brand">
+        <span class="brand-mark"><i class="fa-solid fa-bolt"></i></span>
+        <div class="brand-text">
+          <strong>Aether</strong>
+          <span>AI Agent</span>
+        </div>
+        <span class="brand-tag">PRO</span>
+      </div>
+
+      <button class="new-chat" id="newChatBtn" type="button">
+        <i class="fa-solid fa-plus"></i>
+        New Chat
+        <kbd>⌘N</kbd>
+      </button>
+
+      <label class="search-box">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="search" id="historySearch" placeholder="Search chats…" aria-label="Search chats" />
+      </label>
+
+      <div class="side-scroll">
+        <p class="side-label">Today<span>4</span></p>
+        <div class="chat-list" id="chatList">
+          <a href="#" class="chat-item active" data-title="MERN Stack Help">
+            <i class="fa-regular fa-message"></i>
+            <span>MERN Stack Help</span>
+          </a>
+          <a href="#" class="chat-item" data-title="Fix React Bug">
+            <i class="fa-regular fa-message"></i>
+            <span>Fix React Bug</span>
+          </a>
+          <a href="#" class="chat-item" data-title="Tailwind Layout Issues">
+            <i class="fa-regular fa-message"></i>
+            <span>Tailwind Layout Issues</span>
+          </a>
+          <a href="#" class="chat-item" data-title="MongoDB Aggregation">
+            <i class="fa-regular fa-message"></i>
+            <span>MongoDB Aggregation</span>
+          </a>
+        </div>
+
+        <p class="side-label">Previous 7 days<span>3</span></p>
+        <div class="chat-list">
+          <a href="#" class="chat-item" data-title="Docker Compose Setup">
+            <i class="fa-regular fa-message"></i>
+            <span>Docker Compose Setup</span>
+          </a>
+          <a href="#" class="chat-item" data-title="JWT Auth Flow">
+            <i class="fa-regular fa-message"></i>
+            <span>JWT Auth Flow</span>
+          </a>
+          <a href="#" class="chat-item" data-title="SQL Query Optimization">
+            <i class="fa-regular fa-message"></i>
+            <span>SQL Query Optimization</span>
+          </a>
+        </div>
+      </div>
+
+      <div class="side-foot">
+        <div class="usage">
+          <div class="usage-top"><span>Monthly messages</span><strong>68%</strong></div>
+          <div class="usage-bar"></div>
+          <small>1,360 of 2,000 used</small>
+        </div>
+        <div class="account">
+          <span class="avatar">AM</span>
+          <div>
+            <strong>Alex Morgan</strong>
+            <small>Pro workspace</small>
+          </div>
+          <i class="fa-solid fa-gear"></i>
+        </div>
+      </div>
+    </aside>
+
+    <!-- ================================ MAIN ================================ -->
+    <div class="main">
+      <header class="topbar">
+        <button class="icon-btn menu-btn" id="menuBtn" type="button" aria-label="Open navigation">
+          <i class="fa-solid fa-bars-staggered"></i>
+        </button>
+
+        <div class="agent">
+          <span class="agent-orb"><i class="fa-solid fa-wand-magic-sparkles"></i></span>
+          <div class="agent-meta">
+            <div class="agent-name">
+              AI Agent Assistant
+              <span class="online"><span class="dot"></span>Online</span>
+            </div>
+            <div class="agent-sub" id="chatTitle">MERN Stack Help · context 8.4k tokens</div>
+          </div>
+        </div>
+
+        <div class="topbar-actions">
+          <button class="model-pill" type="button" aria-label="Select model">
+            <i class="fa-solid fa-microchip"></i>
+            <span>Claude 3.5 Sonnet</span>
+            <i class="fa-solid fa-chevron-down"></i>
+          </button>
+          <button class="icon-btn" type="button" aria-label="Share conversation">
+            <i class="fa-solid fa-arrow-up-from-bracket"></i>
+          </button>
+          <button class="icon-btn" type="button" aria-label="More options">
+            <i class="fa-solid fa-ellipsis"></i>
+          </button>
+        </div>
+      </header>
+
+      <div class="chat-scroll" id="chatScroll">
+        <div class="chat-inner" id="chatInner">
+          <div class="day-divider"><span>Today</span></div>
+
+          <div class="msg user">
+            <div class="bubble">My React component keeps re-rendering in an infinite loop — the network tab shows hundreds of requests. Here's the effect I wrote:</div>
+          </div>
+
+          <div class="msg ai">
+            <div class="ai-avatar"><i class="fa-solid fa-bolt"></i></div>
+            <div class="ai-body">
+              <div class="ai-name">
+                Aether
+                <span class="tag">AI</span>
+                <span class="stamp">2:14 PM</span>
+              </div>
+              <div class="ai-bubble">
+                <p>Found it — this is the classic <strong>reference identity in the dependency array</strong> trap. Your effect depends on <code class="inline">user</code>, but it also <em>sets</em> <code class="inline">user</code>. Every fetch produces a fresh object, which is a new reference, which re-triggers the effect. Infinite loop.</p>
+
+                <div class="code-block">
+                  <div class="code-head">
+                    <span class="dots"><i></i><i></i><i></i></span>
+                    <span class="code-file"><i class="fa-regular fa-file-code"></i>UserProfile.jsx</span>
+                    <button class="copy-btn" type="button" data-copy><i class="fa-regular fa-copy"></i>Copy</button>
+                  </div>
+                  <pre class="code"><code><div class="line"><span class="c-cm">// ✕ Bug: the effect re-runs because `user` is a new object each render</span></div><div class="line"><span class="c-f">useEffect</span>(() =&gt; {</div><div class="line">  <span class="c-f">fetch</span>(<span class="c-s">"/api/users/"</span> + userId)</div><div class="line">    .<span class="c-f">then</span>((res) =&gt; res.<span class="c-f">json</span>())</div><div class="line">    .<span class="c-f">then</span>((data) =&gt; <span class="c-f">setUser</span>(data));</div><div class="line">}, [userId, <span class="c-w">user</span>]);  <span class="c-cm">// ⟵ new reference every render</span></div><div class="line"> </div><div class="line"><span class="c-cm">// ✓ Fix: depend on primitives only, and cancel stale requests</span></div><div class="line"><span class="c-f">useEffect</span>(() =&gt; {</div><div class="line">  <span class="c-k">const</span> controller = <span class="c-k">new</span> <span class="c-f">AbortController</span>();</div><div class="line"> </div><div class="line">  <span class="c-f">fetch</span>(<span class="c-s">"/api/users/"</span> + userId, { signal: controller.<span class="c-v">signal</span> })</div><div class="line">    .<span class="c-f">then</span>((res) =&gt; res.<span class="c-f">json</span>())</div><div class="line">    .<span class="c-f">then</span>(<span class="c-f">setUser</span>)</div><div class="line">    .<span class="c-f">catch</span>((err) =&gt; <span class="c-k">if</span> (err.<span class="c-v">name</span> !== <span class="c-s">"AbortError"</span>) <span class="c-f">console.error</span>(err));</div><div class="line"> </div><div class="line">  <span class="c-k">return</span> () =&gt; controller.<span class="c-f">abort</span>();</div><div class="line">}, [userId]);</div></code></pre>
+                </div>
+
+                <p>The key changes:</p>
+                <ul>
+                  <li>Removed <code class="inline">user</code> from the dependency array — it was never an input, only an output.</li>
+                  <li>Added a cleanup function so in-flight requests are cancelled on unmount or when <code class="inline">userId</code> changes.</li>
+                  <li>Ignored <code class="inline">AbortError</code> so cancelled fetches don't spam the console.</li>
+                </ul>
+                <p>With this in place the effect runs exactly once per <code class="inline">userId</code>. Want me to refactor it into a reusable <code class="inline">useUser()</code> hook next?</p>
+              </div>
+              <div class="ai-actions">
+                <button class="mini-btn" type="button" data-copy-answer aria-label="Copy answer"><i class="fa-regular fa-copy"></i></button>
+                <button class="mini-btn" type="button" data-like aria-label="Good answer"><i class="fa-regular fa-thumbs-up"></i></button>
+                <button class="mini-btn" type="button" data-dislike aria-label="Bad answer"><i class="fa-regular fa-thumbs-down"></i></button>
+                <button class="mini-btn" type="button" data-regen aria-label="Regenerate answer"><i class="fa-solid fa-rotate-right"></i></button>
+              </div>
+            </div>
+          </div>
+
+          <div class="msg user">
+            <div class="bubble">That fixed it — thanks! Any habits that stop this from happening again?</div>
+          </div>
+
+          <div class="msg ai">
+            <div class="ai-avatar"><i class="fa-solid fa-bolt"></i></div>
+            <div class="ai-body">
+              <div class="ai-name">
+                Aether
+                <span class="tag">AI</span>
+                <span class="stamp">2:16 PM</span>
+              </div>
+              <div class="ai-bubble">
+                <p>Three habits cover almost every case I've seen in production MERN apps:</p>
+                <ul>
+                  <li><strong>Depend on primitives.</strong> If you need an object, depend on its <code class="inline">id</code> and read the object inside the effect.</li>
+                  <li><strong>Always return cleanup.</strong> Any subscription, timer or fetch should be cancelled on the way out.</li>
+                  <li><strong>Derive, don't store.</strong> If a value can be computed from props or state, compute it during render instead of syncing it in an effect.</li>
+                </ul>
+                <p>Would you like a short checklist you can drop into your PR template?</p>
+              </div>
+              <div class="ai-actions">
+                <button class="mini-btn" type="button" data-copy-answer aria-label="Copy answer"><i class="fa-regular fa-copy"></i></button>
+                <button class="mini-btn" type="button" data-like aria-label="Good answer"><i class="fa-regular fa-thumbs-up"></i></button>
+                <button class="mini-btn" type="button" data-dislike aria-label="Bad answer"><i class="fa-regular fa-thumbs-down"></i></button>
+                <button class="mini-btn" type="button" data-regen aria-label="Regenerate answer"><i class="fa-solid fa-rotate-right"></i></button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ============================== COMPOSER ============================== -->
+      <div class="composer-wrap">
+        <div class="composer">
+          <div class="suggestions">
+            <button class="sugg" type="button" data-sugg="Turn this into a reusable useUser() hook"><i class="fa-solid fa-code"></i>Turn this into a hook</button>
+            <button class="sugg" type="button" data-sugg="Write unit tests for this component"><i class="fa-solid fa-vial"></i>Write unit tests</button>
+            <button class="sugg" type="button" data-sugg="Review the rest of my component for other issues"><i class="fa-solid fa-magnifying-glass-chart"></i>Review my component</button>
+          </div>
+
+          <div class="composer-box">
+            <textarea id="composerInput" rows="1" placeholder="Ask Aether anything — debugging, refactors, architecture…" aria-label="Message"></textarea>
+
+            <div class="composer-bar">
+              <button class="tool" type="button" aria-label="Attach file"><i class="fa-solid fa-paperclip"></i><span>Attach</span></button>
+              <button class="tool" type="button" aria-label="Voice input"><i class="fa-solid fa-microphone"></i><span>Voice</span></button>
+              <span class="composer-div"></span>
+              <button class="tool model" type="button" aria-label="Change model">
+                <i class="fa-solid fa-microchip"></i><span>Claude 3.5</span><i class="fa-solid fa-chevron-down"></i>
+              </button>
+              <button class="send-btn" id="sendBtn" type="button" aria-label="Send message">
+                <i class="fa-solid fa-arrow-up"></i>
+              </button>
+            </div>
+          </div>
+
+          <p class="powered">
+            Powered by <b>OpenAI</b><span class="sep">·</span><b>Claude</b><span class="sep">·</span>Responses may be inaccurate. Verify critical code.
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="scrim" id="scrim"></div>
+
+  <script>
+    (function () {
+      'use strict';
+
+      const $ = (sel, root = document) => root.querySelector(sel);
+      const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+
+      const body = document.body;
+      const scroller = $('#chatScroll');
+      const inner = $('#chatInner');
+      const input = $('#composerInput');
+      const sendBtn = $('#sendBtn');
+      const chatTitle = $('#chatTitle');
+
+      const initialHTML = inner.innerHTML;
+
+      /* ------------------------------ Scrolling ----------------------------- */
+      const scrollDown = (smooth = true) => {
+        if (!scroller) return;
+        scroller.scrollTo({
+          top: scroller.scrollHeight,
+          behavior: smooth && !window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'smooth' : 'auto'
+        });
+      };
+
+      /* ------------------------------ Sidebar ------------------------------- */
+      const closeNav = () => body.classList.remove('nav-open');
+
+      $('#menuBtn')?.addEventListener('click', () => body.classList.toggle('nav-open'));
+      $('#scrim')?.addEventListener('click', closeNav);
+
+      $$('.chat-item').forEach((item) => {
+        item.addEventListener('click', (e) => {
+          e.preventDefault();
+          $$('.chat-item').forEach((n) => n.classList.remove('active'));
+          item.classList.add('active');
+          const title = item.dataset.title || item.textContent.trim();
+          if (chatTitle) chatTitle.textContent = title + ' · context 8.4k tokens';
+          closeNav();
+        });
+      });
+
+      const newChatBtn = $('#newChatBtn');
+      newChatBtn?.addEventListener('click', () => {
+        inner.innerHTML = '';
+        appendDay('Today');
+
+        const el = document.createElement('div');
+        el.className = 'msg ai';
+        el.innerHTML =
+          '<div class="ai-avatar"><i class="fa-solid fa-bolt"></i></div>' +
+          '<div class="ai-body">' +
+            '<div class="ai-name">Aether<span class="tag">AI</span><span class="stamp">just now</span></div>' +
+            '<div class="ai-bubble">' +
+              '<p>Fresh conversation — what are we building today?</p>' +
+              '<p>I can debug a stack trace, refactor a component, design a schema, or review a pull request. Drop the code and I will take it from there.</p>' +
+            '</div>' +
+          '</div>';
+        inner.appendChild(el);
+
+        if (chatTitle) chatTitle.textContent = 'New chat · context 0 tokens';
+        $$('.chat-item').forEach((n) => n.classList.remove('active'));
+        input.value = '';
+        resize();
+        input.focus();
+        scrollDown();
+        closeNav();
+      });
+
+      /* -------------------------- History filtering -------------------------- */
+      const historySearch = $('#historySearch');
+      historySearch?.addEventListener('input', () => {
+        const q = historySearch.value.trim().toLowerCase();
+        $$('.chat-item').forEach((item) => {
+          const label = (item.dataset.title || item.textContent).toLowerCase();
+          item.style.display = !q || label.includes(q) ? '' : 'none';
+        });
+      });
+
+      /* ---------------------------- Keyboard -------------------------------- */
+      document.addEventListener('keydown', (e) => {
+        const meta = e.metaKey || e.ctrlKey;
+
+        if (meta && (e.key === 'k' || e.key === 'K')) {
+          e.preventDefault();
+          historySearch?.focus();
+          return;
+        }
+
+        if (meta && (e.key === 'n' || e.key === 'N')) {
+          e.preventDefault();
+          newChatBtn?.click();
+          return;
+        }
+
+        if (e.key === 'Escape') {
+          closeNav();
+          input?.blur();
+        }
+      });
+
+      /* ------------------------------ Composer ------------------------------- */
+      const resize = () => {
+        if (!input) return;
+        input.style.height = 'auto';
+        input.style.height = Math.min(input.scrollHeight, 160) + 'px';
+      };
+
+      input?.addEventListener('input', resize);
+      input?.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
+          e.preventDefault();
+          send();
+        }
+      });
+
+      sendBtn?.addEventListener('click', send);
+
+      $$('.sugg').forEach((btn) => {
+        btn.addEventListener('click', () => {
+          input.value = btn.dataset.sugg || btn.textContent.trim();
+          resize();
+          input.focus();
+        });
+      });
+
+      /* ----------------------------- Message DOM ----------------------------- */
+      const appendDay = (label) => {
+        const el = document.createElement('div');
+        el.className = 'day-divider';
+        el.innerHTML = '<span>' + label + '</span>';
+        inner.appendChild(el);
+      };
+
+      const appendUser = (text) => {
+        const el = document.createElement('div');
+        el.className = 'msg user';
+
+        const bubble = document.createElement('div');
+        bubble.className = 'bubble';
+        bubble.textContent = text;
+
+        el.appendChild(bubble);
+        inner.appendChild(el);
+        return el;
+      };
+
+      const actionBar = () =>
+        '<div class="ai-actions">' +
+          '<button class="mini-btn" type="button" data-copy-answer aria-label="Copy answer"><i class="fa-regular fa-copy"></i></button>' +
+          '<button class="mini-btn" type="button" data-like aria-label="Good answer"><i class="fa-regular fa-thumbs-up"></i></button>' +
+          '<button class="mini-btn" type="button" data-dislike aria-label="Bad answer"><i class="fa-regular fa-thumbs-down"></i></button>' +
+          '<button class="mini-btn" type="button" data-regen aria-label="Regenerate answer"><i class="fa-solid fa-rotate-right"></i></button>' +
+        '</div>';
+
+      const appendAI = (html, withActions = true) => {
+        const el = document.createElement('div');
+        el.className = 'msg ai';
+        el.innerHTML =
+          '<div class="ai-avatar"><i class="fa-solid fa-bolt"></i></div>' +
+          '<div class="ai-body">' +
+            '<div class="ai-name">Aether<span class="tag">AI</span><span class="stamp">just now</span></div>' +
+            '<div class="ai-bubble">' + html + '</div>' +
+            (withActions ? actionBar() : '') +
+          '</div>';
+        inner.appendChild(el);
+        return el;
+      };
+
+      const showTyping = () => {
+        const el = document.createElement('div');
+        el.id = 'typingMsg';
+        el.className = 'msg ai';
+        el.innerHTML =
+          '<div class="ai-avatar"><i class="fa-solid fa-bolt"></i></div>' +
+          '<div class="ai-body">' +
+            '<div class="ai-name">Aether<span class="tag">AI</span><span class="stamp">typing…</span></div>' +
+            '<div class="typing-bubble"><span></span><span></span><span></span></div>' +
+          '</div>';
+        inner.appendChild(el);
+        scrollDown();
+        return el;
+      };
+
+      const REPLIES = [
+        '<p>Good next step. Here is how I would shape it:</p>' +
+        '<ul>' +
+          '<li><strong>Extract the data fetching</strong> into a custom hook so the component stays declarative.</li>' +
+          '<li><strong>Return <code class="inline">{ data, loading, error }</code></strong> — that trio covers almost every UI state.</li>' +
+          '<li><strong>Cancel on cleanup</strong> so fast navigation never leaks a response into the wrong screen.</li>' +
+        '</ul>' +
+        '<p>Paste your current code and I will rewrite it against this shape.</p>',
+
+        '<p>Absolutely. A compact review checklist for this component:</p>' +
+        '<ul>' +
+          '<li><strong>Effects:</strong> every effect has a cleanup, and the dependency array only holds primitives.</li>' +
+          '<li><strong>State:</strong> no derived values stored separately — compute them in render.</li>' +
+          '<li><strong>Async:</strong> loading and error branches both render, and stale requests are aborted.</li>' +
+          '<li><strong>Tests:</strong> one test per branch, mocked fetch, no snapshot of the whole tree.</li>' +
+        '</ul>' +
+        '<p>Want me to generate the matching Vitest suite?</p>',
+
+        '<p>Happy to go deeper. My plan would be:</p>' +
+        '<ul>' +
+          '<li>Keep the network layer thin and typed at the boundary.</li>' +
+          '<li>Let the component own only presentation state.</li>' +
+          '<li>Add one integration test that drives the real effect path.</li>' +
+        '</ul>' +
+        '<p>Say the word and I will scaffold the files.</p>'
+      ];
+
+      let replyIndex = 0;
+
+      /* ------------------------------- Sending ------------------------------- */
+      function send() {
+        if (!input) return;
+        const text = input.value.trim();
+        if (!text) {
+          input.focus();
+          return;
+        }
+
+        appendUser(text);
+
+        input.value = '';
+        resize();
+        scrollDown();
+
+        const typing = showTyping();
+
+        const delay = 850 + Math.floor(Math.random() * 550);
+        window.setTimeout(() => {
+          typing?.remove();
+          const html = REPLIES[replyIndex % REPLIES.length];
+          replyIndex += 1;
+          appendAI(html);
+          scrollDown();
+        }, delay);
+      }
+
+      /* ------------------------------ Clipboard ------------------------------ */
+      const copyText = async (text) => {
+        try {
+          if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(text);
+            return true;
+          }
+          throw new Error('fallback');
+        } catch (err) {
+          try {
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            ta.setAttribute('readonly', '');
+            ta.style.position = 'fixed';
+            ta.style.opacity = '0';
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            ta.remove();
+            return true;
+          } catch (e) {
+            return false;
+          }
+        }
+      };
+
+      const flash = (btn, label) => {
+        if (!btn) return;
+        const original = btn.innerHTML;
+        btn.classList.add('copied');
+        btn.innerHTML = '<i class="fa-solid fa-check"></i>' + (label || 'Copied');
+        window.setTimeout(() => {
+          btn.classList.remove('copied');
+          btn.innerHTML = original;
+        }, 1600);
+      };
+
+      /* -------------------------- Delegated handlers ------------------------- */
+      inner.addEventListener('click', (e) => {
+        const copyCode = e.target.closest('[data-copy]');
+        if (copyCode) {
+          const block = copyCode.closest('.code-block');
+          const code = block?.querySelector('pre.code code');
+          const text = code ? Array.from(code.querySelectorAll('.line')).map((l) => l.textContent).join('\n') : '';
+          copyText(text).then((ok) => ok && flash(copyCode));
+          return;
+        }
+
+        const copyAnswer = e.target.closest('[data-copy-answer]');
+        if (copyAnswer) {
+          const msg = copyAnswer.closest('.msg');
+          const bubble = msg?.querySelector('.ai-bubble');
+          copyText(bubble ? bubble.innerText : '').then((ok) => ok && flash(copyAnswer, ''));
+          return;
+        }
+
+        const like = e.target.closest('[data-like]');
+        if (like) {
+          const msg = like.closest('.ai-actions');
+          msg?.querySelectorAll('[data-like], [data-dislike]').forEach((b) => b.classList.remove('liked', 'disliked'));
+          like.classList.add('liked');
+          const icon = like.querySelector('i');
+          if (icon) icon.className = 'fa-solid fa-thumbs-up';
+          return;
+        }
+
+        const dislike = e.target.closest('[data-dislike]');
+        if (dislike) {
+          const msg = dislike.closest('.ai-actions');
+          msg?.querySelectorAll('[data-like], [data-dislike]').forEach((b) => b.classList.remove('liked', 'disliked'));
+          dislike.classList.add('disliked');
+          const icon = dislike.querySelector('i');
+          if (icon) icon.className = 'fa-solid fa-thumbs-down';
+          return;
+        }
+
+        const regen = e.target.closest('[data-regen]');
+        if (regen) {
+          const msg = regen.closest('.msg');
+          const bubble = msg?.querySelector('.ai-bubble');
+          if (!bubble) return;
+          const typing = showTyping();
+          window.setTimeout(() => {
+            typing?.remove();
+            const html = REPLIES[replyIndex % REPLIES.length];
+            replyIndex += 1;
+            bubble.innerHTML = html;
+            scrollDown();
+          }, 900);
+        }
+      });
+
+      /* -------------------------------- Init -------------------------------- */
+      resize();
+      window.requestAnimationFrame(() => scrollDown(false));
+    })();
+  </script>
+</body>
+</html>
