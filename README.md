@@ -4,10 +4,11 @@ A collection of high-fidelity, interactive front-end applications built from scr
 
 ## 🚀 Live Demos
 *(建议你用 Vercel/Netlify 部署一下，把链接贴在这里)*
-- [01. SaaS Landing Page](你的链接1) - High-converting UI with scroll animations.
-- [02. Analytics Dashboard](你的链接2) - Data visualization with Chart.js and responsive layout.
-- [03. AI Chatbot Interface](你的链接3) - Dark-mode LLM interface with dynamic message states.
-- [04. E-commerce Checkout Flow](你的链接4) - Interactive cart with state persistence.
+
+- [01. SaaS Landing Page](https://github.com/wenjieli-pro/fullstack-portfolio/01-saas-landing-page) - High-converting UI with scroll animations.
+- [02. Analytics Dashboard](https://github.com/wenjieli-pro/fullstack-portfolio/02-analytics-dashboard) - Data visualization with Chart.js and responsive layout.
+- [03. AI Chatbot Interface](https://github.com/wenjieli-pro/fullstack-portfolio/03-ai-chatbot-interface) - Dark-mode LLM interface with dynamic message states.
+- [04. E-commerce Checkout Flow](https://github.com/wenjieli-pro/fullstack-portfolio/04-ecommerce-checkout) - Interactive cart with state persistence.
 
 ## 🛠 Tech Stack
 - **Frontend:** HTML5, CSS3 (Grid, Flexbox, Variables), Vanilla JavaScript
@@ -21,5 +22,5 @@ Currently migrating these frontends to a full-stack architecture:
 - [ ] Add JWT authentication for the AI Chatbot portal.
 
 ## 📬 Contact
-- **Contra:** [你的Contra链接]
-- **Email:** 你的邮箱
+- **Contra:** [https://contra.com/wenjie_li_shuvw0j0]
+- **Email:** liwenjie9310@163.com
